@@ -8,3 +8,8 @@ iced = "0.13.1"
 palette = "0.7.6"
 image = "0.25.5"
 rodio = "0.20.1" 
+
+[[bin]]
+name = "KeyboardAppLCammish"
+path = "src/main.rs"
+windows = true

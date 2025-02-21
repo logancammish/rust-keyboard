@@ -1,4 +1,4 @@
-//#![windows_subsystem = "windows"]
+#![windows_subsystem = "windows"]
 
 use iced::{ widget::{button, container, slider, text, text_input}, * };
 use rodio::{self, Source};
@@ -53,15 +53,17 @@ impl RealNote {
     fn play(self, bpm: f32) {  
 
         thread::spawn(move || {   
-            let time = NoteLength::duration_in_seconds(&self.length, bpm) as u64;
+            let time = NoteLength::duration_in_seconds(&self.length, bpm);
             let frequency: f32 = Self::base_frequencies(self.note) * 2_f32.powf(self.octave);
-            println!("{}", frequency);
+            println!("Playing: {}hz | Time: {}s", frequency, time);
             let (_stream, device) = rodio::OutputStream::try_default().unwrap();
             let source = rodio::source::SineWave::new(frequency)
             .amplify(100.0)
-            .take_duration(Duration::new(time, 0));
-            device.play_raw(source.convert_samples()).unwrap();
-            std::thread::sleep(Duration::new(time, 0));
+            .take_duration(Duration::from_secs_f32(time));
+
+            let sink = rodio::Sink::try_new(&device).unwrap();
+            sink.append(source);
+            sink.sleep_until_end();
         });
     }
 }
@@ -153,13 +155,13 @@ impl Program {
                     length: NoteLength::Whole,
                     octave: self.octave
                 }, self.bpm);
-                std::thread::sleep(Duration::new(2, 0));
+                //std::thread::sleep(Duration::new(2, 0));
                 RealNote::play(RealNote{
                     note: Note::E, 
                     length: NoteLength::Half,
                     octave: self.octave,
                 }, self.bpm);
-                std::thread::sleep(Duration::new(2, 0));
+                //std::thread::sleep(Duration::new(2, 0));
                 RealNote::play(RealNote{
                     note: Note::G, 
                     length: NoteLength::Quarter,

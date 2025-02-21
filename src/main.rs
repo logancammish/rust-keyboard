@@ -1,4 +1,4 @@
-#![windows_subsystem = "windows"]
+//#![windows_subsystem = "windows"]
 
 use iced::{ widget::{button, container, slider, text, text_input}, * };
 use rodio::{self, Source};
@@ -54,7 +54,8 @@ impl RealNote {
 
         thread::spawn(move || {   
             let time = NoteLength::duration_in_seconds(&self.length, bpm) as u64;
-            let frequency: f32 = Self::base_frequencies(self.note).powf((&self.octave + 1.0));
+            let frequency: f32 = Self::base_frequencies(self.note) * 2_f32.powf(self.octave);
+            println!("{}", frequency);
             let (_stream, device) = rodio::OutputStream::try_default().unwrap();
             let source = rodio::source::SineWave::new(frequency)
             .amplify(100.0)
@@ -96,7 +97,7 @@ impl Program {
             widget::row!(
                 text("Octave"),
                 slider(
-                    0.0..=10.0,
+                    0.0..=5.0,
                     self.octave,
                     Message::OctaveChange
                 ),
@@ -108,7 +109,7 @@ impl Program {
                     10.0..=300.0,
                     self.bpm, 
                     Message::BpmChange
-                ),
+                ),  
                 text_input(format!("{}", &self.bpm).as_str(), &self.custom_bpm)
                 .on_input(Message::CustomBpmChange) 
                 .width(Length::Fixed(50.0)),
@@ -152,16 +153,16 @@ impl Program {
                     length: NoteLength::Whole,
                     octave: self.octave
                 }, self.bpm);
-                std::thread::sleep(Duration::new(3, 0));
+                std::thread::sleep(Duration::new(2, 0));
                 RealNote::play(RealNote{
                     note: Note::E, 
-                    length: NoteLength::Whole,
+                    length: NoteLength::Half,
                     octave: self.octave,
                 }, self.bpm);
-                std::thread::sleep(Duration::new(3, 0));
+                std::thread::sleep(Duration::new(2, 0));
                 RealNote::play(RealNote{
                     note: Note::G, 
-                    length: NoteLength::Whole,
+                    length: NoteLength::Quarter,
                     octave: self.octave,
                 }, self.bpm);
             }

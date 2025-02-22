@@ -1,8 +1,9 @@
 #![windows_subsystem = "windows"]
 
-use iced::{ widget::{button, container, slider, text, text_input}, * };
+use iced::widget::{button, container, slider, text, text_input};
+use iced::{Theme, Element, widget, Length, Subscription};
 use rodio::{self, Source};
-use std::{f32, ops::Mul, thread, time::Duration};
+use std::{f32, thread, time::Duration};
 
 
 #[derive(Debug, Hash, Eq, PartialEq, Clone)]
@@ -23,6 +24,13 @@ impl NoteLength {
             NoteLength::Eighth => (60.0 / bpm) * 0.5,      
             NoteLength::Sixteenth => (60.0 / bpm) * 0.25,  
         }
+    }
+    pub fn check_bpm(bpm: f32) -> bool { 
+        if (bpm <= 0.0) || (bpm > 300.0) {
+            return false
+        }
+
+        true
     }
 }
 
@@ -103,7 +111,7 @@ impl Program {
                     self.octave,
                     Message::OctaveChange
                 ),
-            ),
+            ).spacing(2),
 
             widget::row!(
                 text("BPM"),
@@ -112,10 +120,12 @@ impl Program {
                     self.bpm, 
                     Message::BpmChange
                 ),  
+                
                 text_input(format!("{}", &self.bpm).as_str(), &self.custom_bpm)
                 .on_input(Message::CustomBpmChange) 
+                .padding(2)
                 .width(Length::Fixed(50.0)),
-            ),
+            ).spacing(2),
 
             widget::row!(
                 button("Play")
@@ -142,11 +152,25 @@ impl Program {
             }
 
             Message::CustomBpmChange(value) => {
-                self.bpm = value.parse().expect("Failed to convert");
+                if let Ok(value) = value.parse() {
+                    if NoteLength::check_bpm(value) == true  {
+                        self.bpm = value;
+                        self.custom_bpm = value.to_string();
+                    } else {
+                        self.bpm = 60.0;
+                        self.custom_bpm = "60".to_string();
+                    }
+                } 
             }
 
             Message::BpmChange(value) => {
-                self.bpm = value;
+                if NoteLength::check_bpm(value) == true  {
+                    self.bpm = value;
+                    self.custom_bpm = value.to_string();
+                } else {
+                    self.bpm = 60.0;
+                    self.custom_bpm = "60".to_string();
+                }
             }
 
             Message::Play => {

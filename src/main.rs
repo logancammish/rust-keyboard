@@ -2,11 +2,10 @@
 
 use iced::widget::{button, container, slider, text, text_input};
 use iced::{Theme, Element, widget, Length, Subscription};
-use palette::num::Real;
 use rodio::{self, Source};
-use std::{f32, thread, time::Duration};
+use std::time::Duration;
 use threadpool::ThreadPool;
-
+use num_cpus;
 
 
 #[derive(Debug, Hash, Eq, PartialEq, Clone)]
@@ -45,7 +44,6 @@ struct RealNote {
     octave: f32,
 }
 
-
 impl RealNote { 
     pub fn base_frequencies(note: Note) -> f32 { 
         match note {
@@ -63,47 +61,32 @@ impl RealNote {
             Note::B => 30.87,
         }
     }
-    fn play(self, bpm: f32) {  
-        let time = NoteLength::duration_in_seconds(&self.length, bpm);
-        let frequency: f32 = Self::base_frequencies(self.note) * 2_f32.powf(self.octave);
-        println!("Playing: {}hz | Time: {}s", frequency, time);
-        let (_stream, device) = rodio::OutputStream::try_default().unwrap();
-        let source = rodio::source::SineWave::new(frequency)
-        .amplify(100.0)
-        .take_duration(Duration::from_secs_f32(time));
 
-        let sink = rodio::Sink::try_new(&device).unwrap();
+    fn play(&self, bpm: f32) {  
+        let time = NoteLength::duration_in_seconds(&self.length, bpm);
+        let frequency: f32 = Self::base_frequencies(self.note.clone()) * 2_f32.powf(self.octave);
+        println!("Playing: {}hz | Time: {}s", frequency, time);
+        let (_stream, device) = rodio::OutputStream::try_default()
+            .expect("Failed to get output device");
+        let source = rodio::source::SineWave::new(frequency)
+            .amplify(100.0)
+            .take_duration(Duration::from_secs_f32(time));
+        let sink = rodio::Sink::try_new(&device)
+            .expect("Failed to create sink with device");
         sink.append(source);
         sink.sleep_until_end();
     }
 }
 
-fn async_play_note(notes: Vec<RealNote>, bpm: f32) {
-    println!("Playing notes: {:?}", notes); 
-    let pool = ThreadPool::new(notes.len());
-    for note in notes { 
+fn async_play_note(notes: &Vec<RealNote>, bpm: f32) {
+    let length = notes.len().min(num_cpus::get());
+    let pool = ThreadPool::new(length);
+    for note in notes.clone() { 
         pool.execute(move || {
             note.play(bpm);
         });
     }
 }
-
-
-pub fn main() -> iced::Result {
-    println!("All music is at 120bpm, 4/4 time");
-    
-    iced::application("namne", Program::update, Program::view) 
-    .subscription(Program::subscription)
-    .theme(|_| Theme::TokyoNight)
-    .run()
-
-}
-
-struct Program { 
-    octave: f32,
-    bpm: f32,
-    custom_bpm: String
-} 
 
 #[derive(Debug, Clone)]
 enum Message { 
@@ -113,7 +96,23 @@ enum Message {
     Play
 }
 
+struct Program { 
+    octave: f32,
+    bpm: f32,
+    custom_bpm: String
+} 
+
 impl Program { 
+    pub fn update_bpm(&mut self, value: f32) {
+        if NoteLength::check_bpm(value) {
+            self.bpm = value;
+            self.custom_bpm = value.to_string();
+        } else {
+            self.bpm = 60.0;
+            self.custom_bpm = "60".to_string();
+        }
+    }
+
     fn view(&self) -> Element<Message> { 
         container(widget::column![
             widget::row!(
@@ -157,53 +156,40 @@ impl Program {
         .padding(10)
         .into()
     }
+    
     fn update(&mut self, message: Message) { 
+
         match message { 
             Message::OctaveChange(value) => {
                 self.octave = value;
             }
 
             Message::CustomBpmChange(value) => {
-                if let Ok(value) = value.parse() {
-                    if NoteLength::check_bpm(value) == true  {
-                        self.bpm = value;
-                        self.custom_bpm = value.to_string();
-                    } else {
-                        self.bpm = 60.0;
-                        self.custom_bpm = "60".to_string();
-                    }
+                if let Ok(value) = value.parse::<f32>() {
+                    Self::update_bpm(self, value);
                 } 
             }
 
             Message::BpmChange(value) => {
-                if NoteLength::check_bpm(value) == true  {
-                    self.bpm = value;
-                    self.custom_bpm = value.to_string();
-                } else {
-                    self.bpm = 60.0;
-                    self.custom_bpm = "60".to_string();
-                }
+                Self::update_bpm(self, value);
             }
 
             Message::Play => {
-                RealNote::play(RealNote{
+                RealNote::play(&RealNote{
                     note: Note::C, 
                     length: NoteLength::Whole,
                     octave: self.octave
                 }, self.bpm);
-                //std::thread::sleep(Duration::new(2, 0));
-                RealNote::play(RealNote{
+                RealNote::play(&RealNote{
                     note: Note::E, 
                     length: NoteLength::Half,
                     octave: self.octave,
                 }, self.bpm);
-                RealNote::play(RealNote{
+                RealNote::play(&RealNote{
                     note: Note::G, 
                     length: NoteLength::Quarter,
                     octave: self.octave,
                 }, self.bpm);
-
-                std::thread::sleep(Duration::new(3, 0));
 
 
                 let c_chord: Vec<RealNote> = Vec::from([
@@ -211,12 +197,10 @@ impl Program {
                     RealNote { note: Note::E, length: NoteLength::Half, octave: self.octave },
                     RealNote { note: Note::G, length: NoteLength::Quarter, octave: self.octave },
                 ]);
-
-                async_play_note(c_chord, self.bpm);
+                async_play_note(&c_chord, self.bpm);
             }
         }
     }
-    
 
     fn subscription(&self) -> Subscription<Message> {
         Subscription::none()
@@ -231,4 +215,13 @@ impl Default for Program {
             custom_bpm: "120".to_string()
         }
     }
+}
+
+pub fn main() -> iced::Result {
+    println!("All music is at 120bpm, 4/4 time");
+    
+    iced::application("namne", Program::update, Program::view) 
+        .subscription(Program::subscription)
+        .theme(|_| Theme::TokyoNight)
+        .run()
 }

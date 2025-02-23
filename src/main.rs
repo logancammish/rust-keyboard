@@ -2,60 +2,20 @@
 
 use iced::widget::{button, container, slider, text, text_input, checkbox};
 use iced::{Theme, Element, widget, Length, Subscription};
+use palette::num::Real;
 use rodio::{self, Source};
 use std::collections::HashMap;
 use std::time::Duration;
 use threadpool::ThreadPool;
 use num_cpus;
 
+trait Playable {
+    fn play(&self, bpm: f32);
+}
 
 #[derive(Debug, Hash, Eq, PartialEq, Clone)]
 enum Note { 
     A, Asharp, B, C, Csharp, D, Dsharp, E, F, Fsharp, G, Gsharp
-}
-
-impl Note {
-    pub fn get_major_scale(&self) -> Vec<Note> { 
-        let mut major_scales: HashMap<Note, Vec<Note>> = HashMap::new();
-        major_scales.insert(Note::A, vec![
-            Note::A, Note::B, Note::Csharp, Note::D, Note::E, Note::Fsharp, Note::Gsharp
-        ]);
-        major_scales.insert(Note::Asharp, vec![
-            Note::Asharp, Note::C, Note::D, Note::Dsharp, Note::F, Note::G, Note::A
-        ]);
-        major_scales.insert(Note::B, vec![
-            Note::B, Note::Csharp, Note::Dsharp, Note::E, Note::Fsharp, Note::Gsharp, Note::Asharp
-        ]);
-        major_scales.insert(Note::C, vec![
-            Note::C, Note::D, Note::E, Note::F, Note::G, Note::A, Note::B
-        ]);
-        major_scales.insert(Note::Csharp, vec![
-            Note::Csharp, Note::Dsharp, Note::F, Note::Fsharp, Note::Gsharp, Note::Asharp, Note::C
-        ]);
-        major_scales.insert(Note::D, vec![
-            Note::D, Note::E, Note::Fsharp, Note::G, Note::A, Note::B, Note::Csharp
-        ]);
-        major_scales.insert(Note::Dsharp, vec![
-            Note::Dsharp, Note::F, Note::G, Note::Gsharp, Note::Asharp, Note::C, Note::D
-        ]);
-        major_scales.insert(Note::E, vec![
-            Note::E, Note::Fsharp, Note::Gsharp, Note::A, Note::B, Note::Csharp, Note::Dsharp
-        ]);
-        major_scales.insert(Note::F, vec![
-            Note::F, Note::G, Note::A, Note::Asharp, Note::C, Note::D, Note::E
-        ]);
-        major_scales.insert(Note::Fsharp, vec![
-            Note::Fsharp, Note::Gsharp, Note::Asharp, Note::B, Note::Csharp, Note::Dsharp, Note::F
-        ]);
-        major_scales.insert(Note::G, vec![
-            Note::G, Note::A, Note::B, Note::C, Note::D, Note::E, Note::Fsharp
-        ]);
-        major_scales.insert(Note::Gsharp, vec![
-            Note::Gsharp, Note::Asharp, Note::C, Note::Csharp, Note::Dsharp, Note::F, Note::G
-        ]);
-
-        major_scales.get(&self).expect("Not a valid scale").clone()
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -107,7 +67,7 @@ impl RealNote {
         }
     }
 
-    fn play(&self, bpm: f32) {  
+    fn play_sound(&self, bpm: f32) {  
         let time = NoteLength::duration_in_seconds(&self.length, bpm);
         let frequency: f32 = Self::base_frequencies(self.note.clone()) * 2_f32.powf(self.octave);
         // println!("Playing: {}hz | Time: {}s", frequency, time);
@@ -123,18 +83,78 @@ impl RealNote {
     }
 
     fn play_async(&self, bpm: f32) { 
-        let notes = Vec::from([self.clone()]);
+        let notes = vec![self.clone()];
         async_play_note(&notes, bpm);
     }
+}
 
-    fn play_triad(&self, bpm: f32) { 
-        let scale = Note::get_major_scale(&self.note); 
-        let chord: Vec<RealNote> = Vec::from([
-            RealNote { note: scale[0].clone(), length: self.length.clone(), octave: self.octave },
-            RealNote { note: scale[2].clone(), length: self.length.clone(), octave: self.octave },
-            RealNote { note: scale[4].clone(), length: self.length.clone(), octave: self.octave },
+impl Playable for RealNote { 
+    fn play(&self, bpm: f32) {
+        self.play_sound(bpm);
+    }
+}
+
+struct Chord { 
+    notes: Vec<RealNote>
+}
+impl Chord {
+    pub fn get_major_scale(note: Note) -> Vec<Note> { 
+        let mut major_scales: HashMap<Note, Vec<Note>> = HashMap::new();
+        major_scales.insert(Note::A, vec![
+            Note::A, Note::B, Note::Csharp, Note::D, Note::E, Note::Fsharp, Note::Gsharp
         ]);
-        async_play_note(&chord, bpm);
+        major_scales.insert(Note::Asharp, vec![
+            Note::Asharp, Note::C, Note::D, Note::Dsharp, Note::F, Note::G, Note::A
+        ]);
+        major_scales.insert(Note::B, vec![
+            Note::B, Note::Csharp, Note::Dsharp, Note::E, Note::Fsharp, Note::Gsharp, Note::Asharp
+        ]);
+        major_scales.insert(Note::C, vec![
+            Note::C, Note::D, Note::E, Note::F, Note::G, Note::A, Note::B
+        ]);
+        major_scales.insert(Note::Csharp, vec![
+            Note::Csharp, Note::Dsharp, Note::F, Note::Fsharp, Note::Gsharp, Note::Asharp, Note::C
+        ]);
+        major_scales.insert(Note::D, vec![
+            Note::D, Note::E, Note::Fsharp, Note::G, Note::A, Note::B, Note::Csharp
+        ]);
+        major_scales.insert(Note::Dsharp, vec![
+            Note::Dsharp, Note::F, Note::G, Note::Gsharp, Note::Asharp, Note::C, Note::D
+        ]);
+        major_scales.insert(Note::E, vec![
+            Note::E, Note::Fsharp, Note::Gsharp, Note::A, Note::B, Note::Csharp, Note::Dsharp
+        ]);
+        major_scales.insert(Note::F, vec![
+            Note::F, Note::G, Note::A, Note::Asharp, Note::C, Note::D, Note::E
+        ]);
+        major_scales.insert(Note::Fsharp, vec![
+            Note::Fsharp, Note::Gsharp, Note::Asharp, Note::B, Note::Csharp, Note::Dsharp, Note::F
+        ]);
+        major_scales.insert(Note::G, vec![
+            Note::G, Note::A, Note::B, Note::C, Note::D, Note::E, Note::Fsharp
+        ]);
+        major_scales.insert(Note::Gsharp, vec![
+            Note::Gsharp, Note::Asharp, Note::C, Note::Csharp, Note::Dsharp, Note::F, Note::G
+        ]);
+
+        major_scales.get(&note).expect("Not a valid scale").clone()
+    }
+
+    fn triad_from_note(note: &RealNote) -> Chord {
+        let scale = Self::get_major_scale(note.note.clone());
+        return Chord{
+            notes: vec![
+                RealNote { note: scale[0].clone(), length: note.length.clone(), octave: note.octave },
+                RealNote { note: scale[2].clone(), length: note.length.clone(), octave: note.octave },
+                RealNote { note: scale[4].clone(), length: note.length.clone(), octave: note.octave }
+            ]
+        }
+    }
+}
+
+impl Playable for Chord { 
+    fn play(&self, bpm: f32) {
+        async_play_note(&self.notes, bpm);
     }
 }
 
@@ -143,7 +163,7 @@ fn async_play_note(notes: &Vec<RealNote>, bpm: f32) {
     let pool = ThreadPool::new(length);
     for note in notes.clone() { 
         pool.execute(move || {
-            note.play(bpm);
+            note.play_sound(bpm);
         });
     }
 }
@@ -318,11 +338,11 @@ impl Program {
                         octave: self.octave
                     }, self.bpm);
                 } else if self.play_chords == true { 
-                    RealNote::play_triad(&RealNote{
+                    Chord::play(&Chord::triad_from_note(&RealNote {
                         note: note, 
                         length: NoteLength::Whole,
                         octave: self.octave
-                    }, self.bpm);
+                    }), self.bpm);
                 } else if self.play_async == true {               
                     RealNote::play_async(&RealNote{ 
                         note: note, 

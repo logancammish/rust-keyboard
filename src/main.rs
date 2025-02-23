@@ -1,10 +1,10 @@
 #![windows_subsystem = "windows"]
 
-use iced::widget::{button, container, slider, text, text_input, checkbox};
-use iced::{Theme, Element, widget, Length, Subscription};
-use palette::num::Real;
+mod gui;
+mod chord;
+
+use iced::{Theme, Element, Subscription};
 use rodio::{self, Source};
-use std::collections::HashMap;
 use std::time::Duration;
 use threadpool::ThreadPool;
 use num_cpus;
@@ -98,48 +98,6 @@ struct Chord {
     notes: Vec<RealNote>
 }
 impl Chord {
-    pub fn get_major_scale(note: Note) -> Vec<Note> { 
-        let mut major_scales: HashMap<Note, Vec<Note>> = HashMap::new();
-        major_scales.insert(Note::A, vec![
-            Note::A, Note::B, Note::Csharp, Note::D, Note::E, Note::Fsharp, Note::Gsharp
-        ]);
-        major_scales.insert(Note::Asharp, vec![
-            Note::Asharp, Note::C, Note::D, Note::Dsharp, Note::F, Note::G, Note::A
-        ]);
-        major_scales.insert(Note::B, vec![
-            Note::B, Note::Csharp, Note::Dsharp, Note::E, Note::Fsharp, Note::Gsharp, Note::Asharp
-        ]);
-        major_scales.insert(Note::C, vec![
-            Note::C, Note::D, Note::E, Note::F, Note::G, Note::A, Note::B
-        ]);
-        major_scales.insert(Note::Csharp, vec![
-            Note::Csharp, Note::Dsharp, Note::F, Note::Fsharp, Note::Gsharp, Note::Asharp, Note::C
-        ]);
-        major_scales.insert(Note::D, vec![
-            Note::D, Note::E, Note::Fsharp, Note::G, Note::A, Note::B, Note::Csharp
-        ]);
-        major_scales.insert(Note::Dsharp, vec![
-            Note::Dsharp, Note::F, Note::G, Note::Gsharp, Note::Asharp, Note::C, Note::D
-        ]);
-        major_scales.insert(Note::E, vec![
-            Note::E, Note::Fsharp, Note::Gsharp, Note::A, Note::B, Note::Csharp, Note::Dsharp
-        ]);
-        major_scales.insert(Note::F, vec![
-            Note::F, Note::G, Note::A, Note::Asharp, Note::C, Note::D, Note::E
-        ]);
-        major_scales.insert(Note::Fsharp, vec![
-            Note::Fsharp, Note::Gsharp, Note::Asharp, Note::B, Note::Csharp, Note::Dsharp, Note::F
-        ]);
-        major_scales.insert(Note::G, vec![
-            Note::G, Note::A, Note::B, Note::C, Note::D, Note::E, Note::Fsharp
-        ]);
-        major_scales.insert(Note::Gsharp, vec![
-            Note::Gsharp, Note::Asharp, Note::C, Note::Csharp, Note::Dsharp, Note::F, Note::G
-        ]);
-
-        major_scales.get(&note).expect("Not a valid scale").clone()
-    }
-
     fn triad_from_note(note: &RealNote) -> Chord {
         let scale = Self::get_major_scale(note.note.clone());
         return Chord{
@@ -197,116 +155,11 @@ impl Program {
         }
     }
 
-    fn view(&self) -> Element<Message> { 
-        container(widget::column![
-            widget::row!(
-                text("Octave"),
-                slider(
-                    0.0..=10.0,
-                    self.octave,
-                    Message::OctaveChange
-                ),
-            ).spacing(2),
-
-            widget::row!(
-                text("BPM"),
-                slider(
-                    10.0..=300.0,
-                    self.bpm, 
-                    Message::BpmChange
-                ),  
-                
-                text_input(format!("{}", &self.bpm).as_str(), &self.custom_bpm)
-                .on_input(Message::CustomBpmChange) 
-                .padding(2)
-                .width(Length::Fixed(50.0)),
-            ).spacing(2),
-
-            widget::row!(
-                checkbox("Play triads", self.play_chords)
-                    .on_toggle(|_| Message::PlayChords),
-                checkbox("Play aynchronously", self.play_async)
-                    .on_toggle(|_| Message::PlayAsync),
-            ),
-
-            widget::row!(
-                //C NOTE BEGIN
-                //FLATS ARE INDICATED BY 50
-                button("")
-                .on_press(Message::Play(Note::C))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(150.0))  
-                .padding(10),  
-                button("")
-                .on_press(Message::Play(Note::Csharp))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(50.0))  
-                .padding(10),      
-                button("")
-                .on_press(Message::Play(Note::D))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(150.0))  
-                .padding(10), 
-                button("")
-                .on_press(Message::Play(Note::Dsharp))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(50.0))  
-                .padding(10),      
-                button("")
-                .on_press(Message::Play(Note::E))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(150.0))  
-                .padding(10),         
-                button("")
-                .on_press(Message::Play(Note::F))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(150.0))  
-                .padding(10),      
-                button("")
-                .on_press(Message::Play(Note::Fsharp))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(50.0))  
-                .padding(10),  
-                button("")
-                .on_press(Message::Play(Note::G))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(150.0))  
-                .padding(10),      
-                button("")
-                .on_press(Message::Play(Note::Gsharp))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(50.0))  
-                .padding(10),      
-                button("")
-                .on_press(Message::Play(Note::A))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(150.0))  
-                .padding(10),     
-                button("")
-                .on_press(Message::Play(Note::Asharp))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(50.0))  
-                .padding(10),      
-                button("")
-                .on_press(Message::Play(Note::B))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(150.0))  
-                .padding(10),        
-            ).spacing(3),
-
-            widget::row!(
-                text(format!("Octave: {}", &self.octave))
-                .size(72)
-                .wrapping(text::Wrapping::Glyph),
-            )
-
-        ].spacing(10))
-        .padding(10)
-        .into()
-    }
+    fn view<'a>(&'a self) -> Element<'a, Message> {
+        Self::get_ui_information(self).into()
+    }    
     
     fn update(&mut self, message: Message) { 
-
         match message { 
             Message::PlayChords => {
                 self.play_chords = !self.play_chords;
@@ -350,14 +203,6 @@ impl Program {
                         octave: self.octave
                     }, self.bpm);
                 }
-
-
-                // let c_chord: Vec<RealNote> = Vec::from([
-                //     RealNote { note: Note::C, length: NoteLength::Whole, octave: self.octave },
-                //     RealNote { note: Note::E, length: NoteLength::Half, octave: self.octave },
-                //     RealNote { note: Note::G, length: NoteLength::Quarter, octave: self.octave },
-                // ]);
-                // async_play_note(&c_chord, self.bpm);
             }
         }
     }
@@ -380,8 +225,6 @@ impl Default for Program {
 }
 
 pub fn main() -> iced::Result {
-    // println!("All music is at 120bpm, 4/4 time");
-    
     iced::application("namne", Program::update, Program::view) 
         .subscription(Program::subscription)
         .theme(|_| Theme::TokyoNight)

@@ -1,6 +1,12 @@
+// use other files inside this project
 use crate::{Chord, Note};
+
+// use dependencies
 use std::collections::HashMap;
 
+// impliment for Chord
+// functions: 
+// 1. get_major_scale  -> returns the major scale of the relevant Note
 impl Chord { 
     pub fn get_major_scale(note: Note) -> Vec<Note> { 
         let mut major_scales: HashMap<Note, Vec<Note>> = HashMap::new();

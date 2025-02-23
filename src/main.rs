@@ -110,11 +110,11 @@ impl RealNote {
     fn play(&self, bpm: f32) {  
         let time = NoteLength::duration_in_seconds(&self.length, bpm);
         let frequency: f32 = Self::base_frequencies(self.note.clone()) * 2_f32.powf(self.octave);
-        println!("Playing: {}hz | Time: {}s", frequency, time);
+        // println!("Playing: {}hz | Time: {}s", frequency, time);
         let (_stream, device) = rodio::OutputStream::try_default()
             .expect("Failed to get output device");
         let source = rodio::source::SineWave::new(frequency)
-            .amplify(100.0)
+            .amplify(0.1)
             .take_duration(Duration::from_secs_f32(time));
         let sink = rodio::Sink::try_new(&device)
             .expect("Failed to create sink with device");
@@ -175,7 +175,7 @@ impl Program {
             widget::row!(
                 text("Octave"),
                 slider(
-                    0.0..=5.0,
+                    0.0..=10.0,
                     self.octave,
                     Message::OctaveChange
                 ),
@@ -331,7 +331,7 @@ impl Program {
 impl Default for Program { 
     fn default() -> Self {
         Self {
-            octave: 0.0,
+            octave: 2.0,
             bpm: 120.0,
             custom_bpm: "120".to_string(),
             play_chords: false
@@ -340,7 +340,7 @@ impl Default for Program {
 }
 
 pub fn main() -> iced::Result {
-    println!("All music is at 120bpm, 4/4 time");
+    // println!("All music is at 120bpm, 4/4 time");
     
     iced::application("namne", Program::update, Program::view) 
         .subscription(Program::subscription)

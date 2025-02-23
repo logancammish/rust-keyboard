@@ -122,6 +122,11 @@ impl RealNote {
         sink.sleep_until_end();
     }
 
+    fn play_async(&self, bpm: f32) { 
+        let notes = Vec::from([self.clone()]);
+        async_play_note(&notes, bpm);
+    }
+
     fn play_triad(&self, bpm: f32) { 
         let scale = Note::get_major_scale(&self.note); 
         let chord: Vec<RealNote> = Vec::from([
@@ -149,14 +154,16 @@ enum Message {
     BpmChange(f32),
     CustomBpmChange(String),
     Play(Note),
-    PlayChords
+    PlayChords,
+    PlayAsync
 }
 
 struct Program { 
     octave: f32,
     bpm: f32,
     custom_bpm: String,
-    play_chords: bool
+    play_chords: bool,
+    play_async: bool
 } 
 
 impl Program { 
@@ -198,6 +205,8 @@ impl Program {
             widget::row!(
                 checkbox("Play triads", self.play_chords)
                     .on_toggle(|_| Message::PlayChords),
+                checkbox("Play aynchronously", self.play_async)
+                    .on_toggle(|_| Message::PlayAsync),
             ),
 
             widget::row!(
@@ -283,6 +292,10 @@ impl Program {
                 self.play_chords = !self.play_chords;
             }
 
+            Message::PlayAsync => {
+                self.play_async = !self.play_async;
+            }
+
             Message::OctaveChange(value) => {
                 self.octave = value;
             }
@@ -298,14 +311,20 @@ impl Program {
             }
 
             Message::Play(note) => {
-                if self.play_chords == false {
+                if (self.play_chords == false) && (self.play_async == false) {  
                     RealNote::play(&RealNote{
                         note: note, 
                         length: NoteLength::Whole,
                         octave: self.octave
                     }, self.bpm);
-                } else { 
+                } else if self.play_chords == true { 
                     RealNote::play_triad(&RealNote{
+                        note: note, 
+                        length: NoteLength::Whole,
+                        octave: self.octave
+                    }, self.bpm);
+                } else if self.play_async == true {               
+                    RealNote::play_async(&RealNote{ 
                         note: note, 
                         length: NoteLength::Whole,
                         octave: self.octave
@@ -334,7 +353,8 @@ impl Default for Program {
             octave: 2.0,
             bpm: 120.0,
             custom_bpm: "120".to_string(),
-            play_chords: false
+            play_chords: false,
+            play_async: false
         }
     }
 }
@@ -346,4 +366,4 @@ pub fn main() -> iced::Result {
         .subscription(Program::subscription)
         .theme(|_| Theme::TokyoNight)
         .run()
-}
+} 

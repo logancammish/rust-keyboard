@@ -1,8 +1,13 @@
+// use dependencies
 use iced::{widget, Length};
 use iced::widget::{button, checkbox, container, slider, text, text_input, Container};
 
+// use other files inside this project
 use crate::{Message, Note, Program};
 
+// impliment for Program
+// functions: 
+// 1. get_ui_information  -> returns the UI info needed for the program
 impl Program { 
     pub fn get_ui_information(&self) -> Container<'static, Message> {
         container(widget::column![
@@ -39,66 +44,67 @@ impl Program {
             widget::row!(
                 //C NOTE BEGIN
                 //FLATS ARE INDICATED BY 50
+
                 button("")
-                .on_press(Message::Play(Note::C))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(150.0))  
-                .padding(10),  
+                    .on_press(Message::Play(Note::C))
+                    .width(Length::Fixed(50.0)) 
+                    .height(Length::Fixed(150.0))  
+                    .padding(10),  
                 button("")
-                .on_press(Message::Play(Note::Csharp))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(50.0))  
-                .padding(10),      
+                    .on_press(Message::Play(Note::Csharp))
+                    .width(Length::Fixed(50.0)) 
+                    .height(Length::Fixed(50.0))  
+            g       .padding(10),      
                 button("")
-                .on_press(Message::Play(Note::D))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(150.0))  
-                .padding(10), 
+                    .on_press(Message::Play(Note::D))
+                    .width(Length::Fixed(50.0)) 
+                    .height(Length::Fixed(150.0))  
+                    .padding(10), 
                 button("")
-                .on_press(Message::Play(Note::Dsharp))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(50.0))  
-                .padding(10),      
+                    .on_press(Message::Play(Note::Dsharp))
+                    .width(Length::Fixed(50.0)) 
+                    .height(Length::Fixed(50.0))  
+                    .padding(10),      
                 button("")
-                .on_press(Message::Play(Note::E))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(150.0))  
-                .padding(10),         
+                    .on_press(Message::Play(Note::E))
+                    .width(Length::Fixed(50.0)) 
+                    .height(Length::Fixed(150.0))  
+                    .padding(10),         
                 button("")
-                .on_press(Message::Play(Note::F))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(150.0))  
-                .padding(10),      
+                    .on_press(Message::Play(Note::F))
+                    .width(Length::Fixed(50.0)) 
+                    .height(Length::Fixed(150.0))  
+                    .padding(10),      
                 button("")
-                .on_press(Message::Play(Note::Fsharp))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(50.0))  
-                .padding(10),  
+                    .on_press(Message::Play(Note::Fsharp))
+                    .width(Length::Fixed(50.0)) 
+                    .height(Length::Fixed(50.0))  
+                    .padding(10),  
                 button("")
-                .on_press(Message::Play(Note::G))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(150.0))  
-                .padding(10),      
+                    .on_press(Message::Play(Note::G))
+                    .width(Length::Fixed(50.0)) 
+                    .height(Length::Fixed(150.0))  
+                    .padding(10),      
                 button("")
-                .on_press(Message::Play(Note::Gsharp))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(50.0))  
-                .padding(10),      
+                    .on_press(Message::Play(Note::Gsharp))
+                    .width(Length::Fixed(50.0)) 
+                    .height(Length::Fixed(50.0))  
+                    .padding(10),      
                 button("")
-                .on_press(Message::Play(Note::A))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(150.0))  
-                .padding(10),     
+                    .on_press(Message::Play(Note::A))
+                    .width(Length::Fixed(50.0)) 
+                    .height(Length::Fixed(150.0))  
+                    .padding(10),     
                 button("")
-                .on_press(Message::Play(Note::Asharp))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(50.0))  
-                .padding(10),      
+                    .on_press(Message::Play(Note::Asharp))
+                    .width(Length::Fixed(50.0)) 
+                    .height(Length::Fixed(50.0))  
+                    .padding(10),      
                 button("")
-                .on_press(Message::Play(Note::B))
-                .width(Length::Fixed(50.0)) 
-                .height(Length::Fixed(150.0))  
-                .padding(10),        
+                    .on_press(Message::Play(Note::B))
+                    .width(Length::Fixed(50.0)) 
+                    .height(Length::Fixed(150.0))  
+                    .padding(10),        
             ).spacing(3),
 
             widget::row!(

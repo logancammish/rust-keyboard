@@ -54,7 +54,7 @@ impl Program {
                     .on_press(Message::Play(Note::Csharp))
                     .width(Length::Fixed(50.0)) 
                     .height(Length::Fixed(50.0))  
-            g       .padding(10),      
+                    .padding(10),      
                 button("")
                     .on_press(Message::Play(Note::D))
                     .width(Length::Fixed(50.0)) 

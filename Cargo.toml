@@ -10,6 +10,7 @@ image = "0.25.5"
 rodio = "0.20.1" 
 threadpool = "1.8.1"
 num_cpus = "1.16.0"
+midly = "0.5.3"
 
 [[bin]]
 name = "KeyboardAppLCammish"
